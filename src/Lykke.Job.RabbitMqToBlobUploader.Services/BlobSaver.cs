@@ -54,7 +54,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
             var storageAccount = CloudStorageAccount.Parse(blobConnectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
-            _blobContainer = blobClient.GetContainerReference(container.Replace('.', '-'));
+            _blobContainer = blobClient.GetContainerReference(container.Replace('.', '-').ToLower());
             bool containerExists = _blobContainer.ExistsAsync().GetAwaiter().GetResult();
             if (!containerExists)
                 _blobContainer
