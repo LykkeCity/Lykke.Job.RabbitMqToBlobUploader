@@ -7,6 +7,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Core.Services
     {
         Task StopAsync();
 
-        void Register(IStopable stopable);
+        void Register(IStopable stopable, int priority);
     }
 }

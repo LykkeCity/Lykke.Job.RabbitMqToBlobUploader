@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lykke.Common" Version="4.4.3" />
-    <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.3.1" />
+    <PackageReference Include="Lykke.Common" Version="4.5.0" />
+    <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.4.0" />
     <!-- #if azurequeuesub -->
     <PackageReference Include="Lykke.JobTriggers" Version="1.2.0" />
     <!-- #endif -->
@@ -35,7 +35,7 @@
     <!-- #endif -->
     <PackageReference Include="Lykke.SettingsReader" Version="2.1.0" />
     <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.1" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.2.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.HttpOverrides" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.2" />

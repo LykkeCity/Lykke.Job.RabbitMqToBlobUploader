@@ -63,7 +63,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                     .GetAwaiter()
                     .GetResult();
 
-            shutdownManager.Register(this);
+            shutdownManager.Register(this, 1);
         }
 
         public async Task AddDataItemAsync(byte[] item)
@@ -108,18 +108,35 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         public void Stop()
         {
-            var thread = _thread;
+            if (IsStopped())
+                return;
 
+            var thread = _thread;
             if (thread == null)
                 return;
 
             _thread = null;
-
             _cancellationTokenSource?.Cancel();
+
+            while (true)
+            {
+                _lock.Wait();
+                try
+                {
+                    if (_queue.Count == 0)
+                        break;
+                }
+                finally
+                {
+                    _lock.Release();
+                }
+                Thread.Sleep(1000);
+            }
 
             thread.Join();
 
             _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
         }
 
         public void Dispose()
@@ -155,7 +172,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             if (itemsCount == 0
                 || itemsCount < _minBatchCount
                 && _lastTime.HasValue
-                && DateTime.UtcNow.Subtract(_lastTime.Value) < TimeSpan.FromHours(1))
+                && DateTime.UtcNow.Subtract(_lastTime.Value) < TimeSpan.FromHours(1)
+                && (_cancellationTokenSource == null || !_cancellationTokenSource.IsCancellationRequested))
             {
                 await Task.Delay(_delay, _cancellationTokenSource.Token);
                 return;
