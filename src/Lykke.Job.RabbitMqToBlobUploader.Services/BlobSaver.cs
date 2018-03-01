@@ -257,6 +257,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             catch (Exception ex)
             {
                 await _log.WriteErrorAsync($"BlobSaver.SaveQueueAsync", i.ToString(), ex);
+                if (ex is StorageException)
+                    _blob = null;
             }
         }
 
