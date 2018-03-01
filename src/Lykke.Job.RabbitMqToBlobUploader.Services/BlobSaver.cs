@@ -30,6 +30,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         {
             MaximumExecutionTime = TimeSpan.FromMinutes(15),
         };
+        private readonly Encoding _blobEncoding = Encoding.UTF8;
+        private readonly byte[] _eolBytes = Encoding.UTF8.GetBytes(Environment.NewLine);
 
         private Thread _thread;
         private CancellationTokenSource _cancellationTokenSource;
@@ -266,6 +268,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 {
                     var data = _queue[j].Item2;
                     stream.Write(data, 0, data.Length);
+                    stream.Write(_eolBytes, 0, _eolBytes.Length);
                 }
                 stream.Position = 0;
                 await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
@@ -306,7 +309,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), null, null);
                 _blob.Properties.ContentType = "text/plain";
-                _blob.Properties.ContentEncoding = Encoding.UTF8.WebName;
+                _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
             }
             catch (StorageException)
