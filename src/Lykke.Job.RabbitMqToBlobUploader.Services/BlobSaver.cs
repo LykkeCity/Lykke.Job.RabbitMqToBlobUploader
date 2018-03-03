@@ -19,6 +19,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private const string _dateFormat = "yyyy-MM-dd";
 
         private readonly ILog _log;
+        private readonly string _container;
         private readonly CloudBlobContainer _blobContainer;
         private readonly List<Tuple<DateTime, byte[]>> _queue = new List<Tuple<DateTime, byte[]>>();
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
@@ -56,7 +57,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
             var storageAccount = CloudStorageAccount.Parse(blobConnectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
-            _blobContainer = blobClient.GetContainerReference(container.Replace('.', '-').ToLower());
+            _container = container.Replace('.', '-').ToLower();
+            _blobContainer = blobClient.GetContainerReference(_container);
             bool containerExists = _blobContainer.ExistsAsync().GetAwaiter().GetResult();
             if (!containerExists)
                 _blobContainer
@@ -90,8 +92,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             {
                 _lastWarning = now;
                 await _log.WriteWarningAsync(
-                    nameof(BlobSaver),
-                    nameof(AddDataItemAsync),
+                    "BlobSaver.AddDataItemAsync",
+                    _container,
                     $"{count} items in saving queue (> {_warningQueueCount}) - thread status: {(_thread != null ? _thread.ThreadState.ToString() : "missing")}");
             }
         }
@@ -161,7 +163,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 }
                 catch (Exception ex)
                 {
-                    await _log.WriteErrorAsync(nameof(BlobSaver), nameof(ProcessDataAsync), ex);
+                    await _log.WriteErrorAsync("BlobSaver.ProcessDataAsync", _container, ex);
                 }
             }
         }
@@ -170,7 +172,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         {
             int itemsCount = _queue.Count;
             if (_queue.Count > _warningQueueCount)
-                await _log.WriteInfoAsync(nameof(BlobSaver), nameof(ProcessQueueAsync), $"{itemsCount} items in queue");
+                await _log.WriteInfoAsync("BlobSaver.ProcessQueueAsync", _container, $"{itemsCount} items in queue");
             if (itemsCount == 0
                 || itemsCount < _minBatchCount
                 && _lastTime.HasValue
@@ -224,8 +226,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             {
                 await _log.WriteErrorAsync(
                     "BlobSaver.SaveQueueAsync",
-                    _queue[0].Item2.Length.ToString(),
-                    new InvalidOperationException("Could not append new block. Item is too large!"));
+                    _container,
+                    new InvalidOperationException("Could not append new block. Item is too large - {_queue[0].Item2.Length}!"));
                 await _lock.WaitAsync();
                 try
                 {
@@ -245,8 +247,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
                 if (_queue.Count > _warningQueueCount)
                     await _log.WriteInfoAsync(
-                        nameof(BlobSaver),
-                        nameof(SaveQueueAsync),
+                        "BlobSaver.SaveQueueAsync",
+                        _container,
                         "Blob was recreated - " + (_blob?.Uri != null ? _blob.Uri.ToString() : ""));
             }
 
@@ -256,7 +258,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             }
             catch (Exception ex)
             {
-                await _log.WriteErrorAsync($"BlobSaver.SaveQueueAsync", i.ToString(), ex);
+                await _log.WriteErrorAsync($"BlobSaver.SaveQueueAsync", _container, ex);
                 if (ex is StorageException)
                     _blob = null;
             }
@@ -290,14 +292,14 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             }
             else
             {
-                await _log.WriteWarningAsync(nameof(BlobSaver), nameof(SaveToBlobAsync), "Using unsafe queue clearing");
+                await _log.WriteWarningAsync("BlobSaver.SaveToBlobAsync", _container, "Using unsafe queue clearing");
                 _queue.RemoveRange(0, count);
             }
 
             if (_queue.Count > _warningQueueCount)
                 await _log.WriteInfoAsync(
-                    nameof(BlobSaver),
-                    nameof(SaveToBlobAsync),
+                    "BlobSaver.SaveToBlobAsync",
+                    _container,
                     $"{count} items were saved to " + (_blob?.Uri != null ? _blob.Uri.ToString() : ""));
         }
 
