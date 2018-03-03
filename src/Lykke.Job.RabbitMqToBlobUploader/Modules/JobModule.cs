@@ -40,7 +40,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
                 .AutoActivate()
                 .SingleInstance()
                 .WithParameter("blobConnectionString", _settings.BlobConnectionString)
-                .WithParameter("container", _settings.Rabbit.ExchangeName)
+                .WithParameter("container", _settings.ContainerName)
                 .WithParameter("isPublicContainer", _settings.IsPublicContainer)
                 .WithParameter("useBatchingByHour", _settings.UseBatchingByHour)
                 .WithParameter("minBatchCount", _settings.MinBatchCount)

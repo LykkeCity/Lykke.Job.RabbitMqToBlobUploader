@@ -31,6 +31,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
 
         public bool IsPublicContainer { get; set; }
 
+        public string ContainerName { get; set; }
+
         public bool UseBatchingByHour { get; set; }
 
         public int MinBatchCount { get; set; }
