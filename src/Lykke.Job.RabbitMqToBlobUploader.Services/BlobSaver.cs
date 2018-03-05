@@ -32,7 +32,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             MaximumExecutionTime = TimeSpan.FromMinutes(15),
         };
         private readonly Encoding _blobEncoding = Encoding.UTF8;
-        private readonly byte[] _eolBytes = Encoding.UTF8.GetBytes(Environment.NewLine);
+        private readonly byte[] _eolBytes = Encoding.UTF8.GetBytes("\r\n");
 
         private Thread _thread;
         private CancellationTokenSource _cancellationTokenSource;
