@@ -39,6 +39,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
 
         public int MaxBatchCount { get; set; }
 
+        public bool CompressData { get; set; }
+
         public RabbitMqSettings Rabbit { get; set; }
     }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -17,12 +18,14 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private const int _maxBlockSize = 4 * 1024 * 1024; // 4 Mb
         private const string _hourFormat = "yyyy-MM-dd-HH";
         private const string _dateFormat = "yyyy-MM-dd";
+        private const string _compressedKey = "compressed";
 
         private readonly ILog _log;
         private readonly string _container;
         private readonly CloudBlobContainer _blobContainer;
         private readonly List<Tuple<DateTime, byte[]>> _queue = new List<Tuple<DateTime, byte[]>>();
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
+        private readonly bool _compressData;
         private readonly int _minBatchCount;
         private readonly int _maxBatchCount;
         private readonly bool _useBatchingByHour;
@@ -39,6 +42,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private DateTime? _lastTime;
         private DateTime _lastWarning = DateTime.MinValue;
         private CloudAppendBlob _blob;
+        private bool? _isBlobCompressed;
 
         public BlobSaver(
             ILog log,
@@ -46,11 +50,13 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             string blobConnectionString,
             string container,
             bool isPublicContainer,
+            bool compressData,
             bool useBatchingByHour,
             int minBatchCount,
             int maxBatchCount)
         {
             _log = log;
+            _compressData = compressData;
             _useBatchingByHour = useBatchingByHour;
             _minBatchCount = minBatchCount > 0 ? minBatchCount : 10;
             _maxBatchCount = maxBatchCount > 0 ? maxBatchCount : 1000;
@@ -268,14 +274,26 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         {
             using (var stream = new MemoryStream())
             {
-                for (int j = 0; j < count; j++)
+                var writeStream = _compressData && (!_isBlobCompressed.HasValue || _isBlobCompressed.Value)
+                    ? new GZipStream(stream, CompressionLevel.Optimal)
+                    : (Stream)stream;
+                try
                 {
-                    var data = _queue[j].Item2;
-                    stream.Write(data, 0, data.Length);
-                    stream.Write(_eolBytes, 0, _eolBytes.Length);
+                    for (int j = 0; j < count; j++)
+                    {
+                        var data = _queue[j].Item2;
+                        writeStream.Write(data, 0, data.Length);
+                        writeStream.Flush();
+                        stream.Write(_eolBytes, 0, _eolBytes.Length);
+                    }
+                    stream.Position = 0;
+                    await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
                 }
-                stream.Position = 0;
-                await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
+                finally
+                {
+                    if (_compressData)
+                        writeStream.Dispose();
+                }
             }
 
             bool isLocked = await _lock.WaitAsync(TimeSpan.FromSeconds(1));
@@ -305,15 +323,24 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         private async Task InitBlobAsync(string storagePath)
         {
-            _blob = _blobContainer.GetAppendBlobReference(storagePath);
+            _blob = _blobContainer.GetAppendBlobReference("1111" + storagePath);
+            _isBlobCompressed = null;
             if (await _blob.ExistsAsync())
+            {
+                await _blob.FetchAttributesAsync();
+                if (_blob.Metadata.ContainsKey(_compressedKey) && bool.TryParse(_blob.Metadata[_compressedKey], out bool isBlobCompressed))
+                    _isBlobCompressed = isBlobCompressed;
+                else
+                    _isBlobCompressed = false;
                 return;
+            }
 
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), null, null);
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
+                _blob.Metadata.Add(_compressedKey, _compressData.ToString());
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
             }
             catch (StorageException)
