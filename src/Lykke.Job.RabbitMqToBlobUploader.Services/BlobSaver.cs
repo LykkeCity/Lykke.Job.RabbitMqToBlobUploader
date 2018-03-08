@@ -340,8 +340,9 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), null, null);
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
-                _blob.Metadata.Add(_compressedKey, _compressData.ToString());
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
+                _blob.Metadata.Add(_compressedKey, _compressData.ToString());
+                await _blob.SetMetadataAsync(null, _blobRequestOptions, null);
             }
             catch (StorageException)
             {
