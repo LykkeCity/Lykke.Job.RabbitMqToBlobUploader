@@ -275,7 +275,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             using (var stream = new MemoryStream())
             {
                 var writeStream = _compressData && (!_isBlobCompressed.HasValue || _isBlobCompressed.Value)
-                    ? new GZipStream(stream, CompressionLevel.Optimal)
+                    ? new GZipStream(stream, CompressionLevel.Optimal, true)
                     : (Stream)stream;
                 try
                 {
@@ -286,14 +286,15 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                         writeStream.Flush();
                         stream.Write(_eolBytes, 0, _eolBytes.Length);
                     }
-                    stream.Position = 0;
-                    await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
                 }
                 finally
                 {
                     if (_compressData)
                         writeStream.Dispose();
                 }
+
+                stream.Position = 0;
+                await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
             }
 
             bool isLocked = await _lock.WaitAsync(TimeSpan.FromSeconds(1));
