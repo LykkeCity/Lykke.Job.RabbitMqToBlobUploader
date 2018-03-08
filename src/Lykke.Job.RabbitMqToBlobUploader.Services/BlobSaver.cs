@@ -275,7 +275,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             using (var stream = new MemoryStream())
             {
                 var writeStream = _compressData && (!_isBlobCompressed.HasValue || _isBlobCompressed.Value)
-                    ? new GZipStream(stream, CompressionLevel.Optimal, true)
+                    ? new GZipStream(stream, CompressionLevel.Fastest, true)
                     : (Stream)stream;
                 try
                 {
