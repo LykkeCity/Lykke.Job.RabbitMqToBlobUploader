@@ -323,7 +323,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         private async Task InitBlobAsync(string storagePath)
         {
-            _blob = _blobContainer.GetAppendBlobReference("1111" + storagePath);
+            _blob = _blobContainer.GetAppendBlobReference(storagePath);
             _isBlobCompressed = null;
             if (await _blob.ExistsAsync())
             {
