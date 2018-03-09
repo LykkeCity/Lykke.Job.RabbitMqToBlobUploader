@@ -41,7 +41,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private CancellationTokenSource _cancellationTokenSource;
         private DateTime? _lastTime;
         private DateTime _lastWarning = DateTime.MinValue;
-        private CloudBlockBlob _blob;
+        private CloudAppendBlob _blob;
         private bool? _isBlobCompressed;
 
         public BlobSaver(
@@ -294,7 +294,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
                 stream.Flush();
                 stream.Position = 0;
-                await _blob.UploadFromStreamAsync(stream, null, _blobRequestOptions, null);
+
+                await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
             }
 
             bool isLocked = await _lock.WaitAsync(TimeSpan.FromSeconds(1));
@@ -324,7 +325,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         private async Task InitBlobAsync(string storagePath)
         {
-            _blob = _blobContainer.GetBlockBlobReference(storagePath);
+            _blob = _blobContainer.GetAppendBlobReference(storagePath);
             _isBlobCompressed = null;
             if (await _blob.ExistsAsync())
             {
@@ -338,7 +339,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
             try
             {
-                await _blob.UploadFromByteArrayAsync(new byte[0], 0, 0, AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
+                await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
