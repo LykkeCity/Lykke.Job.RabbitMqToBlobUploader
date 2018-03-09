@@ -280,7 +280,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                     var data = _queue[j].Item2;
                     if (compressData)
                     {
-                        using (var zipIn = new GZipStream(stream, CompressionLevel.Optimal, true))
+                        using (var zipIn = new GZipStream(stream, CompressionLevel.Fastest, true))
                         {
                             zipIn.Write(data, 0, data.Length);
                         }
