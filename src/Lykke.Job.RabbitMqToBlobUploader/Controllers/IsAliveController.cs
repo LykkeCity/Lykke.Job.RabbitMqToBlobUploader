@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Net;
-using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
-using Lykke.Job.RabbitMqToBlobUploader.Models;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Lykke.Common.Api.Contract.Responses;
+using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.Controllers
 {
