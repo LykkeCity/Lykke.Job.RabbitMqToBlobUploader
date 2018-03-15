@@ -16,6 +16,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
     {
         private const int _warningQueueCount = 1000;
         private const int _maxBlockSize = 4 * 1024 * 1024; // 4 Mb
+        private const int _maxBlocksCount = 50000;
         private const string _hourFormat = "yyyy-MM-dd-HH";
         private const string _dateFormat = "yyyy-MM-dd";
         private const string _compressedKey = "compressed";
@@ -265,7 +266,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             catch (Exception ex)
             {
                 await _log.WriteErrorAsync($"BlobSaver.SaveQueueAsync", _container, ex);
-                if (ex is StorageException)
+                if (ex.GetBaseException() is StorageException)
                     _blob = null;
             }
         }
@@ -330,11 +331,27 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             if (await _blob.ExistsAsync())
             {
                 await _blob.FetchAttributesAsync();
-                if (_blob.Metadata.ContainsKey(_compressedKey) && bool.TryParse(_blob.Metadata[_compressedKey], out bool isBlobCompressed))
-                    _isBlobCompressed = isBlobCompressed;
+                if (_blob.Properties.AppendBlobCommittedBlockCount == _maxBlocksCount)
+                {
+                    int i = 1;
+                    while(true)
+                    {
+                        var fileName = $"{storagePath}--{i:00}";
+                        _blob = _blobContainer.GetAppendBlobReference(fileName);
+                        bool exists = await _blob.ExistsAsync();
+                        if (!exists)
+                            break;
+                        ++i;
+                    }
+                }
                 else
-                    _isBlobCompressed = false;
-                return;
+                {
+                    if (_blob.Metadata.ContainsKey(_compressedKey) && bool.TryParse(_blob.Metadata[_compressedKey], out bool isBlobCompressed))
+                        _isBlobCompressed = isBlobCompressed;
+                    else
+                        _isBlobCompressed = false;
+                    return;
+                }
             }
 
             try
