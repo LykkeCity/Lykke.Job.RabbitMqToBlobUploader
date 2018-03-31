@@ -186,7 +186,13 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 && DateTime.UtcNow.Subtract(_lastTime.Value) < TimeSpan.FromHours(1)
                 && (_cancellationTokenSource == null || !_cancellationTokenSource.IsCancellationRequested))
             {
-                await Task.Delay(_delay, _cancellationTokenSource.Token);
+                try
+                {
+                    await Task.Delay(_delay, _cancellationTokenSource.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                }
                 return;
             }
 
