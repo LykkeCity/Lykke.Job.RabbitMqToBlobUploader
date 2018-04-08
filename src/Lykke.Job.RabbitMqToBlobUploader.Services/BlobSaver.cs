@@ -201,6 +201,9 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             while (count < _maxBatchCount && count < itemsCount)
             {
                 pair = _queue[count];
+                if (pair == null)
+                    return;
+
                 if (!_lastTime.HasValue)
                     _lastTime = pair.Item1;
                 if (pair.Item1.Date != _lastTime.Value.Date || _useBatchingByHour && pair.Item1.Hour != _lastTime.Value.Hour)
