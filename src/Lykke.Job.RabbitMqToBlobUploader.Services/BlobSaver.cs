@@ -14,7 +14,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 {
     public class BlobSaver : IBlobSaver
     {
-        private const int _warningQueueCount = 1000;
+        private const int _warningQueueCount = 2000;
         private const int _maxBlockSize = 4 * 1024 * 1024; // 4 Mb
         private const int _maxBlocksCount = 50000;
         private const string _hourFormat = "yyyy-MM-dd-HH";
@@ -386,7 +386,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         {
             if (!_blob.Properties.AppendBlobCommittedBlockCount.HasValue)
                 await _blob.FetchAttributesAsync();
-            if (_blob.Properties.AppendBlobCommittedBlockCount < _maxBlocksCount)
+            if (_blob.Properties.AppendBlobCommittedBlockCount.Value < _maxBlocksCount)
                 return;
 
             int i = 1;
