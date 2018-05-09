@@ -267,6 +267,10 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                         _container,
                         "Blob was recreated - " + (_blob?.Uri != null ? _blob.Uri.ToString() : ""));
             }
+            else
+            {
+                await CheckBloksCountAsync();
+            }
 
             try
             {
@@ -339,7 +343,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             _isBlobCompressed = null;
             if (await _blob.ExistsAsync())
             {
-                await _blob.FetchAttributesAsync();
+                if (!_blob.Properties.AppendBlobCommittedBlockCount.HasValue)
+                    await _blob.FetchAttributesAsync();
                 if (_blob.Properties.AppendBlobCommittedBlockCount == _maxBlocksCount)
                 {
                     int i = 1;
@@ -363,6 +368,37 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 }
             }
 
+            try
+            {
+                await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
+                _blob.Properties.ContentType = "text/plain";
+                _blob.Properties.ContentEncoding = _blobEncoding.WebName;
+                await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
+                _blob.Metadata.Add(_compressedKey, _compressData.ToString());
+                await _blob.SetMetadataAsync(null, _blobRequestOptions, null);
+            }
+            catch (StorageException)
+            {
+            }
+        }
+
+        private async Task CheckBloksCountAsync()
+        {
+            if (!_blob.Properties.AppendBlobCommittedBlockCount.HasValue)
+                await _blob.FetchAttributesAsync();
+            if (_blob.Properties.AppendBlobCommittedBlockCount < _maxBlocksCount)
+                return;
+
+            int i = 1;
+            while (true)
+            {
+                var fileName = $"{_blob.Name}--{i:00}";
+                _blob = _blobContainer.GetAppendBlobReference(fileName);
+                bool exists = await _blob.ExistsAsync();
+                if (!exists)
+                    break;
+                ++i;
+            }
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
