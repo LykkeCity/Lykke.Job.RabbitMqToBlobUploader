@@ -11,6 +11,7 @@ using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 using Lykke.Job.RabbitMqToBlobUploader.Settings;
 using Lykke.Job.RabbitMqToBlobUploader.Modules;
 using Lykke.Logs;
+using Lykke.Logs.Slack;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
 using Microsoft.AspNetCore.Builder;
@@ -203,10 +204,11 @@ namespace Lykke.Job.RabbitMqToBlobUploader
                 persistenceManager,
                 slackNotificationsManager,
                 consoleLogger);
-
             azureStorageLogger.Start();
-
             aggregateLogger.AddLog(azureStorageLogger);
+
+            var logToSlack = LykkeLogToSlack.Create(slackService, "Bridges", LogLevel.Error | LogLevel.FatalError | LogLevel.Warning, true);
+            aggregateLogger.AddLog(logToSlack);
 
             return aggregateLogger;
         }
