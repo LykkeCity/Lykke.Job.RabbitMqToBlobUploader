@@ -354,7 +354,11 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                         _blob = _blobContainer.GetAppendBlobReference(fileName);
                         bool exists = await _blob.ExistsAsync();
                         if (!exists)
+                        {
+                            await _log.WriteInfoAsync("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {fileName}");
+                            await _blob.FetchAttributesAsync();
                             break;
+                        }
                         ++i;
                     }
                 }
@@ -396,7 +400,11 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 _blob = _blobContainer.GetAppendBlobReference(fileName);
                 bool exists = await _blob.ExistsAsync();
                 if (!exists)
+                {
+                    await _log.WriteInfoAsync("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {fileName}");
+                    await _blob.FetchAttributesAsync();
                     break;
+                }
                 ++i;
             }
             try
