@@ -12,6 +12,7 @@ using Lykke.Job.RabbitMqToBlobUploader.Settings;
 using Lykke.Job.RabbitMqToBlobUploader.Modules;
 using Lykke.Logs;
 using Lykke.Logs.Slack;
+using Lykke.MonitoringServiceApiCaller;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
 using Microsoft.AspNetCore.Builder;
