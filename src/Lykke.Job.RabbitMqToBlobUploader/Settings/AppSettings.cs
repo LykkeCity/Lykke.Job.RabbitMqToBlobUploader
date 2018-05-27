@@ -7,6 +7,9 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
         public RabbitMqToBlobUploaderSettings RabbitMqToBlobUploaderJob { get; set; }
 
         public SlackNotificationsSettings SlackNotifications { get; set; }
+
+        [Optional]
+        public MonitoringServiceClientSettings MonitoringServiceClient { get; set; }
     }
 
     public class SlackNotificationsSettings
@@ -19,6 +22,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
         public string ConnectionString { get; set; }
 
         public string QueueName { get; set; }
+    }
+
+    public class MonitoringServiceClientSettings
+    {
+        [HttpCheck("api/isalive", false)]
+        public string MonitoringServiceUrl { get; set; }
     }
 
     public class RabbitMqToBlobUploaderSettings

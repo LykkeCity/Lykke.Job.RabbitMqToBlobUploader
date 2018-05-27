@@ -307,7 +307,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 stream.Flush();
                 stream.Position = 0;
 
-                await _blob.AppendFromStreamAsync(stream, null, _blobRequestOptions, null);
+                await _blob.AppendBlockAsync(stream, null, null, _blobRequestOptions, null);
             }
 
             bool isLocked = await _lock.WaitAsync(TimeSpan.FromSeconds(1));
