@@ -43,7 +43,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private DateTime? _lastTime;
         private DateTime _lastWarning = DateTime.MinValue;
         private CloudAppendBlob _blob;
-        private bool? _isBlobCompressed;
 
         public BlobSaver(
             ILog log,
@@ -98,7 +97,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             if (now.Subtract(_lastWarning) >= TimeSpan.FromMinutes(1))
             {
                 _lastWarning = now;
-                await _log.WriteWarningAsync(
+                _log.WriteWarning(
                     "BlobSaver.AddDataItemAsync",
                     _container,
                     $"{count} items in saving queue (> {_warningQueueCount}) - thread status: {(_thread != null ? _thread.ThreadState.ToString() : "missing")}");
@@ -170,7 +169,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 }
                 catch (Exception ex)
                 {
-                    await _log.WriteErrorAsync("BlobSaver.ProcessDataAsync", _container, ex);
+                    _log.WriteError("BlobSaver.ProcessDataAsync", _container, ex);
                 }
             }
         }
@@ -179,7 +178,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         {
             int itemsCount = _queue.Count;
             if (_queue.Count > _warningQueueCount)
-                await _log.WriteInfoAsync("BlobSaver.ProcessQueueAsync", _container, $"{itemsCount} items in queue");
+                _log.WriteInfo("BlobSaver.ProcessQueueAsync", _container, $"{itemsCount} items in queue");
             if (itemsCount == 0
                 || itemsCount < _minBatchCount
                 && _lastTime.HasValue
@@ -240,7 +239,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
             if (i == 0)
             {
-                await _log.WriteErrorAsync(
+                _log.WriteError(
                     "BlobSaver.SaveQueueAsync",
                     _container,
                     new InvalidOperationException("Could not append new block. Item is too large - {_queue[0].Item2.Length}!"));
@@ -262,7 +261,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 await InitBlobAsync(blobKey);
 
                 if (_queue.Count > _warningQueueCount)
-                    await _log.WriteInfoAsync(
+                    _log.WriteInfo(
                         "BlobSaver.SaveQueueAsync",
                         _container,
                         "Blob was recreated - " + (_blob?.Uri != null ? _blob.Uri.ToString() : ""));
@@ -278,7 +277,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             }
             catch (Exception ex)
             {
-                await _log.WriteErrorAsync($"BlobSaver.SaveQueueAsync", _container, ex);
+                _log.WriteError($"BlobSaver.SaveQueueAsync", _container, ex);
                 if (ex.GetBaseException() is StorageException)
                     _blob = null;
             }
@@ -286,13 +285,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         private async Task SaveToBlobAsync(int count)
         {
-            bool compressData = _compressData && (!_isBlobCompressed.HasValue || _isBlobCompressed.Value);
             using (var stream = new MemoryStream())
             {
                 for (int j = 0; j < count; j++)
                 {
                     var data = _queue[j].Item2;
-                    if (compressData)
+                    if (_compressData)
                     {
                         using (var zipIn = new GZipStream(stream, CompressionLevel.Fastest, true))
                         {
@@ -326,12 +324,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             }
             else
             {
-                await _log.WriteWarningAsync("BlobSaver.SaveToBlobAsync", _container, "Using unsafe queue clearing");
+                _log.WriteWarning("BlobSaver.SaveToBlobAsync", _container, "Using unsafe queue clearing");
                 _queue.RemoveRange(0, count);
             }
 
             if (_queue.Count > _warningQueueCount)
-                await _log.WriteInfoAsync(
+                _log.WriteInfo(
                     "BlobSaver.SaveToBlobAsync",
                     _container,
                     $"{count} items were saved to " + (_blob?.Uri != null ? _blob.Uri.ToString() : ""));
@@ -340,35 +338,30 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private async Task InitBlobAsync(string storagePath)
         {
             _blob = _blobContainer.GetAppendBlobReference(storagePath);
-            _isBlobCompressed = null;
             if (await _blob.ExistsAsync())
             {
                 if (!_blob.Properties.AppendBlobCommittedBlockCount.HasValue)
                     await _blob.FetchAttributesAsync();
-                if (_blob.Properties.AppendBlobCommittedBlockCount == _maxBlocksCount)
-                {
-                    int i = 1;
-                    while(true)
-                    {
-                        var fileName = $"{storagePath}--{i:00}";
-                        _blob = _blobContainer.GetAppendBlobReference(fileName);
-                        bool exists = await _blob.ExistsAsync();
-                        if (!exists)
-                        {
-                            await _log.WriteInfoAsync("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {fileName}");
-                            await _blob.FetchAttributesAsync();
-                            break;
-                        }
-                        ++i;
-                    }
-                }
-                else
-                {
-                    if (_blob.Metadata.ContainsKey(_compressedKey) && bool.TryParse(_blob.Metadata[_compressedKey], out bool isBlobCompressed))
-                        _isBlobCompressed = isBlobCompressed;
-                    else
-                        _isBlobCompressed = false;
+                bool isBlobCompressed = _blob.Metadata.ContainsKey(_compressedKey)
+                    ? bool.Parse(_blob.Metadata[_compressedKey])
+                    : false;
+                if (_blob.Properties.AppendBlobCommittedBlockCount < _maxBlocksCount
+                    && isBlobCompressed == _compressData)
                     return;
+
+                int i = 1;
+                while(true)
+                {
+                    var fileName = $"{storagePath}--{i:00}";
+                    _blob = _blobContainer.GetAppendBlobReference(fileName);
+                    bool exists = await _blob.ExistsAsync();
+                    if (!exists)
+                    {
+                        _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {fileName}");
+                        await _blob.FetchAttributesAsync();
+                        break;
+                    }
+                    ++i;
                 }
             }
 
@@ -401,7 +394,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 bool exists = await _blob.ExistsAsync();
                 if (!exists)
                 {
-                    await _log.WriteInfoAsync("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {fileName}");
+                    _log.WriteInfo("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {fileName}");
                     await _blob.FetchAttributesAsync();
                     break;
                 }
