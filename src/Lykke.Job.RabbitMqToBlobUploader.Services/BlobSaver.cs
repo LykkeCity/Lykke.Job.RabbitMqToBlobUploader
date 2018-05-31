@@ -255,7 +255,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 return;
             }
 
-            if (_blob == null)
+            if (_blob == null || !(await _blob.ExistsAsync()))
             {
                 string blobKey = _queue[0].Item1.ToString(_useBatchingByHour ? _hourFormat : _dateFormat);
                 await InitBlobAsync(blobKey);
