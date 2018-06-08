@@ -356,11 +356,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                     _blob = _blobContainer.GetAppendBlobReference(fileName);
                     bool exists = await _blob.ExistsAsync();
                     if (!exists)
-                    {
-                        _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {fileName}");
-                        await _blob.FetchAttributesAsync();
                         break;
-                    }
                     ++i;
                 }
             }
@@ -368,6 +364,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
+                _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {_blob.Name}");
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
@@ -393,16 +390,13 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 _blob = _blobContainer.GetAppendBlobReference(fileName);
                 bool exists = await _blob.ExistsAsync();
                 if (!exists)
-                {
-                    _log.WriteInfo("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {fileName}");
-                    await _blob.FetchAttributesAsync();
                     break;
-                }
                 ++i;
             }
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
+                _log.WriteInfo("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {_blob.Name}");
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
