@@ -15,7 +15,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
     public class BlobSaver : IBlobSaver
     {
         private const int _warningQueueCount = 2000;
-        private const int _maxBlockSize = 4 * 1024 * 1024; // 4 Mb
+        private const int _maxBlockSize = 4 * 1000 * 1024; // 4000 Kb - some reserve for service call data
         private const int _maxBlocksCount = 50000;
         private const string _hourFormat = "yyyy-MM-dd-HH";
         private const string _dateFormat = "yyyy-MM-dd";
