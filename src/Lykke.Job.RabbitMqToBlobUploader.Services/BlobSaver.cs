@@ -364,7 +364,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
-                _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created additional blob - {_blob.Name}");
+                _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created blob - {_blob.Name}");
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
