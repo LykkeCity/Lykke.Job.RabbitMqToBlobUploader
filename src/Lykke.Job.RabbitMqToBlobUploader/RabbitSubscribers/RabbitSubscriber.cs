@@ -20,7 +20,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
         public RabbitSubscriber(
             ILog log,
             IBlobSaver blobSaver,
-            IShutdownManager shutdownManager,
+            IStartupManager startupManager,
             string connectionString,
             string exchangeName)
         {
@@ -29,7 +29,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             _connectionString = connectionString;
             _exchangeName = exchangeName;
 
-            shutdownManager.Register(this, 0);
+            startupManager.Register(this);
         }
 
         public void Start()

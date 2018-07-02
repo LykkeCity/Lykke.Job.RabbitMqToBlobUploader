@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Common;
 using Common.Log;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 using Lykke.Job.RabbitMqToBlobUploader.Settings;
@@ -29,14 +30,16 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
                 .SingleInstance();
 
             builder.RegisterType<StartupManager>()
-                .As<IStartupManager>();
+                .As<IStartupManager>()
+                .SingleInstance();
 
             builder.RegisterType<ShutdownManager>()
-                .As<IShutdownManager>();
+                .As<IShutdownManager>()
+                .SingleInstance();
 
             builder.RegisterType<BlobSaver>()
                 .As<IBlobSaver>()
-                .As<IStartable>()
+                .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
                 .WithParameter("blobConnectionString", _settings.BlobConnectionString)
@@ -48,7 +51,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
                 .WithParameter("maxBatchCount", _settings.MaxBatchCount);
 
             builder.RegisterType<RabbitSubscriber>()
-                .As<IStartable>()
+                .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
                 .WithParameter("connectionString", _settings.Rabbit.ConnectionString)
