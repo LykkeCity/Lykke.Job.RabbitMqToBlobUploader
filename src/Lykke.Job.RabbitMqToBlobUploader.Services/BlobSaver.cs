@@ -46,7 +46,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
 
         public BlobSaver(
             ILog log,
-            IStartupManager startupManager,
             string blobConnectionString,
             string container,
             bool isPublicContainer,
@@ -72,8 +71,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                         isPublicContainer ? BlobContainerPublicAccessType.Container : BlobContainerPublicAccessType.Off, null, null)
                     .GetAwaiter()
                     .GetResult();
-
-            startupManager.Register(this);
         }
 
         public async Task AddDataItemAsync(byte[] item)

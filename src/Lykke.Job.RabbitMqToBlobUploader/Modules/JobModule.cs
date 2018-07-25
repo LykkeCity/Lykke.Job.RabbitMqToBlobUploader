@@ -39,8 +39,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
 
             builder.RegisterType<BlobSaver>()
                 .As<IBlobSaver>()
-                .As<IStopable>()
-                .AutoActivate()
                 .SingleInstance()
                 .WithParameter("blobConnectionString", _settings.BlobConnectionString)
                 .WithParameter("container", _settings.ContainerName)
@@ -51,11 +49,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
                 .WithParameter("maxBatchCount", _settings.MaxBatchCount);
 
             builder.RegisterType<RabbitSubscriber>()
+                .As<IMainProcessor>()
                 .As<IStopable>()
-                .AutoActivate()
                 .SingleInstance()
                 .WithParameter("connectionString", _settings.Rabbit.ConnectionString)
                 .WithParameter("exchangeName", _settings.Rabbit.ExchangeName);
+            ;
         }
     }
 }

@@ -11,14 +11,10 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private readonly ILog _log;
         private readonly List<IStartable> _startables = new List<IStartable>();
 
-        public StartupManager(ILog log)
+        public StartupManager(ILog log, IMainProcessor mainProcessor)
         {
             _log = log;
-        }
-
-        public void Register(IStartable startable)
-        {
-            _startables.Add(startable);
+            _startables.Add(mainProcessor);
         }
 
         public Task StartAsync()

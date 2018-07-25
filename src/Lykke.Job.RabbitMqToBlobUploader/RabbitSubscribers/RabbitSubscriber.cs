@@ -9,7 +9,7 @@ using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
 {
-    public class RabbitSubscriber : IStartable, IStopable, IMessageDeserializer<byte[]>
+    public class RabbitSubscriber : IStartable, IStopable, IMessageDeserializer<byte[]>, IMainProcessor
     {
         private readonly ILog _log;
         private readonly IBlobSaver _blobSaver;
@@ -20,7 +20,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
         public RabbitSubscriber(
             ILog log,
             IBlobSaver blobSaver,
-            IStartupManager startupManager,
             string connectionString,
             string exchangeName)
         {
@@ -28,12 +27,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             _blobSaver = blobSaver;
             _connectionString = connectionString;
             _exchangeName = exchangeName;
-
-            startupManager.Register(this);
         }
 
         public void Start()
         {
+            _blobSaver.Start();
+
             var settings = RabbitMqSubscriptionSettings
                 .CreateForSubscriber(_connectionString, _exchangeName, "rabbitmqtoblobuploader")
                 .MakeDurable();
@@ -50,6 +49,23 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
                 .Start();
         }
 
+        public void Stop()
+        {
+            _subscriber?.Stop();
+
+            _blobSaver.Stop();
+        }
+
+        public void Dispose()
+        {
+            _subscriber?.Dispose();
+        }
+
+        public byte[] Deserialize(byte[] data)
+        {
+            return data;
+        }
+
         private async Task ProcessMessageAsync(byte[] arg)
         {
             try
@@ -60,21 +76,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             {
                 await _log.WriteErrorAsync(nameof(RabbitSubscriber), nameof(ProcessMessageAsync), ex);
             }
-        }
-
-        public void Dispose()
-        {
-            _subscriber?.Dispose();
-        }
-
-        public void Stop()
-        {
-            _subscriber?.Stop();
-        }
-
-        public byte[] Deserialize(byte[] data)
-        {
-            return data;
         }
     }
 }
