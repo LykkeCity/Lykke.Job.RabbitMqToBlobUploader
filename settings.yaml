@@ -1,0 +1,47 @@
+RabbitMqToBlobUploaderJob:
+    LogsConnString:
+        settings-key: RabbitMqToBlobUploaderJob-LogsConnString
+        types:
+            - AzureTableStorage
+    BlobConnectionString:
+        settings-key: RabbitMqToBlobUploaderJob-BlobConnectionString
+        types:
+            - AzureTableStorage
+    IsPublicContainer: false
+    CompressData:
+        settings-key: RabbitMqToBlobUploaderJob-CompressData
+        types:
+            - Tag
+    ContainerName:
+        settings-key: RabbitMqToBlobUploaderJob-ContainerName
+        types:
+            - Tag
+    UseBatchingByHour:
+        settings-key: RabbitMqToBlobUploaderJob-UseBatchingByHour
+        types:
+            - Tag
+    MinBatchCount: 10
+    MaxBatchCount: 1000
+    Rabbit:
+        ConnectionString:
+            settings-key: RabbitMqToBlobUploaderJob-RabbitMqConnectionString
+            types:
+                - RabbitMq
+                - Tag
+        ExchangeName:
+            settings-key: RabbitMqToBlobUploaderJob-ExchangeName
+            types:
+                - Tag
+
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl       
+
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types:
+                - AzureTableStorage
+        QueueName: 
+            settings-key: SlackQueueName
