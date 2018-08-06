@@ -53,8 +53,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
                 .As<IStopable>()
                 .SingleInstance()
                 .WithParameter("connectionString", _settings.Rabbit.ConnectionString)
-                .WithParameter("exchangeName", _settings.Rabbit.ExchangeName);
-            ;
+                .WithParameter("exchangeName", _settings.Rabbit.ExchangeName)
+                .WithParameter("routingKey", _settings.Rabbit.RoutingKey);
         }
     }
 }

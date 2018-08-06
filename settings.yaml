@@ -32,6 +32,10 @@ RabbitMqToBlobUploaderJob:
             settings-key: RabbitMqToBlobUploaderJob-ExchangeName
             types:
                 - Tag
+        RoutingKey:
+            settings-key: RabbitMqToBlobUploaderJob-RoutingKey
+            types:
+                - Tag
 
 MonitoringServiceClient:
     MonitoringServiceUrl:

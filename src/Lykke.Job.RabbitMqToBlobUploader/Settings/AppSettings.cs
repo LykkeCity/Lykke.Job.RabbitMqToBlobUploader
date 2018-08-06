@@ -59,5 +59,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
         public string ConnectionString { get; set; }
 
         public string ExchangeName { get; set; }
+
+        [Optional]
+        public string RoutingKey { get; set; }
     }
 }

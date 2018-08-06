@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Autofac;
 using Common;
 using Common.Log;
 using Lykke.RabbitMqBroker;
@@ -9,24 +8,27 @@ using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
 {
-    public class RabbitSubscriber : IStartable, IStopable, IMessageDeserializer<byte[]>, IMainProcessor
+    public class RabbitSubscriber : IStopable, IMessageDeserializer<byte[]>, IMainProcessor
     {
         private readonly ILog _log;
         private readonly IBlobSaver _blobSaver;
         private readonly string _connectionString;
         private readonly string _exchangeName;
+        private readonly string _routingKey;
         private RabbitMqSubscriber<byte[]> _subscriber;
 
         public RabbitSubscriber(
             ILog log,
             IBlobSaver blobSaver,
             string connectionString,
-            string exchangeName)
+            string exchangeName,
+            string routingKey)
         {
             _log = log;
             _blobSaver = blobSaver;
             _connectionString = connectionString;
             _exchangeName = exchangeName;
+            _routingKey = routingKey;
         }
 
         public void Start()
@@ -36,6 +38,9 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             var settings = RabbitMqSubscriptionSettings
                 .CreateForSubscriber(_connectionString, _exchangeName, "rabbitmqtoblobuploader")
                 .MakeDurable();
+
+            if (!string.IsNullOrWhiteSpace(_routingKey))
+                settings.UseRoutingKey(_routingKey);
 
             _subscriber = new RabbitMqSubscriber<byte[]>(settings,
                     new ResilientErrorHandlingStrategy(_log, settings,
