@@ -1,20 +1,23 @@
-﻿using System;
-using System.Threading.Tasks;
-using Common;
+﻿using Common;
 using Common.Log;
 using Lykke.RabbitMqBroker;
 using Lykke.RabbitMqBroker.Subscriber;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
+using System;
+using System.Threading.Tasks;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
 {
     public class RabbitSubscriber : IStopable, IMessageDeserializer<byte[]>, IMainProcessor
     {
+        private const string _appEndpointName = "rabbitmqtoblobuploader";
+
         private readonly ILog _log;
         private readonly IBlobSaver _blobSaver;
         private readonly string _connectionString;
         private readonly string _exchangeName;
         private readonly string _routingKey;
+
         private RabbitMqSubscriber<byte[]> _subscriber;
 
         public RabbitSubscriber(
@@ -35,8 +38,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
         {
             _blobSaver.Start();
 
+            string endpointName = !string.IsNullOrWhiteSpace(_routingKey)
+                ? $"{_appEndpointName}.{_routingKey}"
+                : _appEndpointName;
+
             var settings = RabbitMqSubscriptionSettings
-                .CreateForSubscriber(_connectionString, _exchangeName, "rabbitmqtoblobuploader")
+                .CreateForSubscriber(_connectionString, _exchangeName, endpointName)
                 .MakeDurable();
 
             if (!string.IsNullOrWhiteSpace(_routingKey))
