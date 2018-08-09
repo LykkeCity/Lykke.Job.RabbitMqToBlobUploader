@@ -1,19 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Autofac;
-using Common.Log;
+﻿using Autofac;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.Services
 {
     public class StartupManager : IStartupManager
     {
-        private readonly ILog _log;
         private readonly List<IStartable> _startables = new List<IStartable>();
 
-        public StartupManager(ILog log, IMainProcessor mainProcessor)
+        public StartupManager(IMainProcessor mainProcessor)
         {
-            _log = log;
             _startables.Add(mainProcessor);
         }
 

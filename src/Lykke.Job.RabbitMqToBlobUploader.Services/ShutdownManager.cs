@@ -1,19 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Common;
-using Common.Log;
+﻿using Common;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.Services
 {
     public class ShutdownManager : IShutdownManager
     {
-        private readonly ILog _log;
         private readonly IEnumerable<IStopable> _stopables;
 
-        public ShutdownManager(ILog log, IEnumerable<IStopable> stopables)
+        public ShutdownManager(IEnumerable<IStopable> stopables)
         {
-            _log = log;
             _stopables = stopables;
         }
 
