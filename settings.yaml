@@ -10,16 +10,10 @@ RabbitMqToBlobUploaderJob:
     IsPublicContainer: false
     CompressData:
         settings-key: RabbitMqToBlobUploaderJob-CompressData
-        types:
-            - Tag
     ContainerName:
         settings-key: RabbitMqToBlobUploaderJob-ContainerName
-        types:
-            - Tag
     UseBatchingByHour:
         settings-key: RabbitMqToBlobUploaderJob-UseBatchingByHour
-        types:
-            - Tag
     MinBatchCount: 10
     MaxBatchCount: 1000
     Rabbit:
@@ -27,19 +21,14 @@ RabbitMqToBlobUploaderJob:
             settings-key: RabbitMqToBlobUploaderJob-RabbitMqConnectionString
             types:
                 - RabbitMq
-                - Tag
         ExchangeName:
             settings-key: RabbitMqToBlobUploaderJob-ExchangeName
-            types:
-                - Tag
         RoutingKey:
             settings-key: RabbitMqToBlobUploaderJob-RoutingKey
-            types:
-                - Tag
 
 MonitoringServiceClient:
     MonitoringServiceUrl:
-        settings-key: MonitoringServiceUrl       
+        settings-key: MonitoringServiceUrl
 
 SlackNotifications:
     AzureQueue:
