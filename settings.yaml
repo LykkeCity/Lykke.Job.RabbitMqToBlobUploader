@@ -25,6 +25,8 @@ RabbitMqToBlobUploaderJob:
             settings-key: RabbitMqToBlobUploaderJob-ExchangeName
         RoutingKey:
             settings-key: RabbitMqToBlobUploaderJob-RoutingKey
+            types:
+                - Optional
 
 MonitoringServiceClient:
     MonitoringServiceUrl:
