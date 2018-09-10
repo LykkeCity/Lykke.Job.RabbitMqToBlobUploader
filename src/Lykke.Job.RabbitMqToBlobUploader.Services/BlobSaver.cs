@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Common.Log;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.Services
 {
@@ -20,6 +20,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private const string _hourFormat = "yyyy-MM-dd-HH";
         private const string _dateFormat = "yyyy-MM-dd";
         private const string _compressedKey = "compressed";
+        private const string _newFormatKey = "NewFormat";
 
         private readonly ILog _log;
         private readonly string _container;
@@ -192,11 +193,10 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 return;
             }
 
-            Tuple<DateTime, byte[]> pair;
             int count = 0;
             while (count < _maxBatchCount && count < itemsCount)
             {
-                pair = _queue[count];
+                var pair = _queue[count];
                 if (pair == null)
                     return;
 
@@ -287,16 +287,21 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 for (int j = 0; j < count; j++)
                 {
                     var data = _queue[j].Item2;
+                    var lengthArray = BitConverter.GetBytes(data.Length);
                     if (_compressData)
                     {
                         using (var zipIn = new GZipStream(stream, CompressionLevel.Fastest, true))
                         {
+                            zipIn.Write(lengthArray, 0, 4);
                             zipIn.Write(data, 0, data.Length);
+                            zipIn.Write(lengthArray, 0, 4);
                         }
                     }
                     else
                     {
+                        stream.Write(lengthArray, 0, 4);
                         stream.Write(data, 0, data.Length);
+                        stream.Write(lengthArray, 0, 4);
                     }
                     stream.Write(_eolBytes, 0, _eolBytes.Length);
                 }
@@ -339,11 +344,11 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             {
                 if (!_blob.Properties.AppendBlobCommittedBlockCount.HasValue)
                     await _blob.FetchAttributesAsync();
-                bool isBlobCompressed = _blob.Metadata.ContainsKey(_compressedKey)
-                    ? bool.Parse(_blob.Metadata[_compressedKey])
-                    : false;
+                bool isBlobCompressed = _blob.Metadata.ContainsKey(_compressedKey) && bool.Parse(_blob.Metadata[_compressedKey]);
+                bool isNewFormat = _blob.Metadata.ContainsKey(_newFormatKey) && bool.Parse(_blob.Metadata[_newFormatKey]);
                 if (_blob.Properties.AppendBlobCommittedBlockCount < _maxBlocksCount
-                    && isBlobCompressed == _compressData)
+                    && isBlobCompressed == _compressData
+                    && isNewFormat)
                     return;
 
                 int i = 1;
@@ -366,6 +371,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
                 _blob.Metadata.Add(_compressedKey, _compressData.ToString());
+                _blob.Metadata.Add(_newFormatKey, true.ToString());
                 await _blob.SetMetadataAsync(null, _blobRequestOptions, null);
             }
             catch (StorageException)
