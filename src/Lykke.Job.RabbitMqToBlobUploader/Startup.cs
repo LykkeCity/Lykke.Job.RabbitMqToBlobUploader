@@ -4,6 +4,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
+using Lykke.Common;
 using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Common.Api.Contract.Responses;
@@ -15,7 +16,6 @@ using Lykke.Logs.Slack;
 using Lykke.MonitoringServiceApiCaller;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -59,7 +59,12 @@ namespace Lykke.Job.RabbitMqToBlobUploader
                 });
 
                 var builder = new ContainerBuilder();
-                var appSettings = Configuration.LoadSettings<AppSettings>();
+                var appSettings = Configuration.LoadSettings<AppSettings>(o =>
+                {
+                    o.SetConnString(s => s.SlackNotifications.AzureQueue.ConnectionString);
+                    o.SetQueueName(s => s.SlackNotifications.AzureQueue.QueueName);
+                    o.SenderName = $"{AppEnvironment.Name} {AppEnvironment.Version}";
+                });
                 if (appSettings.CurrentValue.MonitoringServiceClient != null)
                     _monitoringServiceUrl = appSettings.CurrentValue.MonitoringServiceClient.MonitoringServiceUrl;
 
@@ -124,9 +129,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader
                 await ApplicationContainer.Resolve<IStartupManager>().StartAsync();
                 Log.WriteMonitor("", Program.EnvInfo, "Started");
 
-#if DEBUG
-                TelemetryConfiguration.Active.DisableTelemetry = true;
-#else
+#if !DEBUG
                 await AutoRegistrationInMonitoring.RegisterAsync(Configuration, _monitoringServiceUrl, Log);
 #endif
             }

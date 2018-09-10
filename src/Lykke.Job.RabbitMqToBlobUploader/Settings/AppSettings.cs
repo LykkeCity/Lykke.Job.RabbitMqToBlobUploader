@@ -26,7 +26,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
 
     public class MonitoringServiceClientSettings
     {
-        [HttpCheck("api/isalive", false)]
+        [HttpCheck("api/isalive")]
         public string MonitoringServiceUrl { get; set; }
     }
 
