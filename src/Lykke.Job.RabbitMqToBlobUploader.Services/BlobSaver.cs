@@ -290,12 +290,19 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                     var lengthArray = BitConverter.GetBytes(data.Length);
                     if (_compressData)
                     {
+                        stream.Write(lengthArray, 0, 4);
+                        long messageStartPosition = stream.Position;
                         using (var zipIn = new GZipStream(stream, CompressionLevel.Fastest, true))
                         {
-                            zipIn.Write(lengthArray, 0, 4);
                             zipIn.Write(data, 0, data.Length);
-                            zipIn.Write(lengthArray, 0, 4);
                         }
+                        int messageLength = (int)(stream.Position - messageStartPosition);
+                        lengthArray = BitConverter.GetBytes(messageLength);
+                        stream.Write(lengthArray, 0, 4);
+                        long returnPosition = stream.Position;
+                        stream.Position = messageStartPosition - 4;
+                        stream.Write(lengthArray, 0, 4);
+                        stream.Position = returnPosition;
                     }
                     else
                     {
