@@ -221,7 +221,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader
             azureStorageLogger.Start();
             aggregateLogger.AddLog(azureStorageLogger);
 
-            var logToSlack = LykkeLogToSlack.Create(slackService, "Bridges", LogLevel.Error | LogLevel.FatalError | LogLevel.Warning, true);
+            var logToSlack = LykkeLogToSlack.Create(slackService, "Bridges", LogLevel.Error | LogLevel.FatalError | LogLevel.Warning | LogLevel.Monitoring);
             aggregateLogger.AddLog(logToSlack);
 
             return aggregateLogger;

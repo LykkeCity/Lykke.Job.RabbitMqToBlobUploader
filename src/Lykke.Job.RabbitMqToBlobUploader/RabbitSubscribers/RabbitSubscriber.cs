@@ -43,7 +43,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
                 : _appEndpointName;
 
             var settings = RabbitMqSubscriptionSettings
-                .CreateForSubscriber(_connectionString, _exchangeName, endpointName)
+                .ForSubscriber(_connectionString, _exchangeName, endpointName)
                 .MakeDurable();
 
             if (!string.IsNullOrWhiteSpace(_routingKey))
@@ -57,7 +57,6 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
                 .Subscribe(ProcessMessageAsync)
                 .CreateDefaultBinding()
                 .SetLogger(_log)
-                .SetConsole(new LogToConsole())
                 .Start();
         }
 
