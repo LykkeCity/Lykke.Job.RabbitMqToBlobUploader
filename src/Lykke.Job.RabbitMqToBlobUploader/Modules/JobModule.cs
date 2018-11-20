@@ -35,6 +35,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Modules
 
             builder.RegisterType<ShutdownManager>()
                 .As<IShutdownManager>()
+                .AutoActivate()
                 .SingleInstance();
 
             builder.RegisterType<BlobSaver>()
