@@ -111,7 +111,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader
 
                 appLifetime.ApplicationStarted.Register(() => StartApplication().GetAwaiter().GetResult());
                 appLifetime.ApplicationStopping.Register(() => StopApplication().GetAwaiter().GetResult());
-                appLifetime.ApplicationStopped.Register(() => CleanUp());
+                appLifetime.ApplicationStopped.Register(CleanUp);
             }
             catch (Exception ex)
             {
@@ -150,10 +150,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader
             }
             catch (Exception ex)
             {
-                if (Log != null)
-                {
-                    Log.WriteFatalError(nameof(Startup), nameof(StopApplication), ex);
-                }
+                Log?.WriteFatalError(nameof(Startup), nameof(StopApplication), ex);
                 throw;
             }
         }
@@ -163,11 +160,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader
             try
             {
                 // NOTE: Job can't recieve and process IsAlive requests here, so you can destroy all resources
-                
-                if (Log != null)
-                {
-                    Log.WriteMonitor("", Program.EnvInfo, "Terminating");
-                }
+
+                Log?.WriteMonitor("", Program.EnvInfo, "Terminating");
                 ApplicationContainer.Dispose();
             }
             catch (Exception ex)

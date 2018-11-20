@@ -4,7 +4,7 @@ using Lykke.Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Job.RabbitMqToBlobUploader.Core.Services;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Lykke.Job.RabbitMqToBlobUploader.Controllers
 {
