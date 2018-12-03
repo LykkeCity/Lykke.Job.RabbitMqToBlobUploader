@@ -32,6 +32,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
         private readonly int _maxBatchCount;
         private readonly bool _useBatchingByHour;
         private readonly TimeSpan _delay = TimeSpan.FromMilliseconds(500);
+        private readonly TimeSpan _queueClearTimeout = TimeSpan.FromSeconds(3);
         private readonly BlobRequestOptions _blobRequestOptions = new BlobRequestOptions
         {
             MaximumExecutionTime = TimeSpan.FromMinutes(15),
@@ -319,7 +320,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 await _blob.AppendBlockAsync(stream, null, null, _blobRequestOptions, null);
             }
 
-            bool isLocked = await _lock.WaitAsync(TimeSpan.FromSeconds(1));
+            bool isLocked = await _lock.WaitAsync(_queueClearTimeout);
             if (isLocked)
             {
                 try
