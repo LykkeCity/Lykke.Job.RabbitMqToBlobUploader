@@ -11,12 +11,14 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
     public class RabbitSubscriber : IStopable, IMessageDeserializer<byte[]>, IMainProcessor
     {
         private const string _appEndpointName = "rabbitmqtoblobuploader";
+        private const ushort _defaultPrefetchCount = 1000;
 
         private readonly ILog _log;
         private readonly IBlobSaver _blobSaver;
         private readonly string _connectionString;
         private readonly string _exchangeName;
         private readonly string _routingKey;
+        private readonly ushort _prefetchCount;
 
         private RabbitMqSubscriber<byte[]> _subscriber;
 
@@ -25,13 +27,15 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             IBlobSaver blobSaver,
             string connectionString,
             string exchangeName,
-            string routingKey)
+            string routingKey,
+            ushort? prefetchCount = null)
         {
             _log = log;
             _blobSaver = blobSaver;
             _connectionString = connectionString;
             _exchangeName = exchangeName;
             _routingKey = routingKey;
+            _prefetchCount = prefetchCount.HasValue ? (prefetchCount.Value > 0 ? prefetchCount.Value : _defaultPrefetchCount) : _defaultPrefetchCount;
         }
 
         public void Start()
@@ -49,14 +53,18 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             if (!string.IsNullOrWhiteSpace(_routingKey))
                 settings.UseRoutingKey(_routingKey);
 
-            _subscriber = new RabbitMqSubscriber<byte[]>(settings,
-                    new ResilientErrorHandlingStrategy(_log, settings,
+            _subscriber = new RabbitMqSubscriber<byte[]>(
+                    settings,
+                    new ResilientErrorHandlingStrategy(
+                        _log,
+                        settings,
                         retryTimeout: TimeSpan.FromSeconds(10),
                         next: new DeadQueueErrorHandlingStrategy(_log, settings)))
                 .SetMessageDeserializer(this)
                 .Subscribe(ProcessMessageAsync)
                 .CreateDefaultBinding()
                 .SetLogger(_log)
+                .SetPrefetchCount(_prefetchCount)
                 .Start();
         }
 

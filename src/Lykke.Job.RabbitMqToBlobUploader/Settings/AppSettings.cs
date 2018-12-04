@@ -62,5 +62,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Settings
 
         [Optional]
         public string RoutingKey { get; set; }
+
+        [Optional]
+        public ushort? PrefetchCount { get; set; }
     }
 }
