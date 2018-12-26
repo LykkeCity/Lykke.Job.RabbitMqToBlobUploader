@@ -93,7 +93,7 @@ namespace Lykke.Job.RabbitMqToBlobUploader.RabbitSubscribers
             }
             catch (Exception ex)
             {
-                await _log.WriteErrorAsync(nameof(RabbitSubscriber), nameof(ProcessMessageAsync), ex);
+                _log.WriteError(nameof(RabbitSubscriber), nameof(ProcessMessageAsync), ex);
             }
         }
     }

@@ -371,20 +371,8 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                 }
             }
 
-            try
-            {
-                await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
-                _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created blob - {_blob.Name}");
-                _blob.Properties.ContentType = "text/plain";
-                _blob.Properties.ContentEncoding = _blobEncoding.WebName;
-                await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
-                _blob.Metadata.Add(_compressedKey, _compressData.ToString());
-                _blob.Metadata.Add(_newFormatKey, true.ToString());
-                await _blob.SetMetadataAsync(null, _blobRequestOptions, null);
-            }
-            catch (StorageException)
-            {
-            }
+            _log.WriteInfo("BlobSaver.InitBlobAsync", _container, $"Created blob - {_blob.Name}");
+            await InitBlobPropertiesAsync();
         }
 
         private async Task CheckBloksCountAsync()
@@ -404,14 +392,20 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
                     break;
                 ++i;
             }
+            _log.WriteInfo("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {_blob.Name}");
+            await InitBlobPropertiesAsync();
+        }
+
+        private async Task InitBlobPropertiesAsync()
+        {
             try
             {
                 await _blob.CreateOrReplaceAsync(AccessCondition.GenerateIfNotExistsCondition(), _blobRequestOptions, null);
-                _log.WriteInfo("BlobSaver.CheckBloksCountAsync", _container, $"Created additional blob - {_blob.Name}");
                 _blob.Properties.ContentType = "text/plain";
                 _blob.Properties.ContentEncoding = _blobEncoding.WebName;
                 await _blob.SetPropertiesAsync(null, _blobRequestOptions, null);
                 _blob.Metadata.Add(_compressedKey, _compressData.ToString());
+                _blob.Metadata.Add(_newFormatKey, true.ToString());
                 await _blob.SetMetadataAsync(null, _blobRequestOptions, null);
             }
             catch (StorageException)

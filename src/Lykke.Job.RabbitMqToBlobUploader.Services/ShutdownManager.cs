@@ -14,11 +14,11 @@ namespace Lykke.Job.RabbitMqToBlobUploader.Services
             _stopables = stopables;
         }
 
-        public async Task StopAsync()
+        public Task StopAsync()
         {
             Parallel.ForEach(_stopables, i => i.Stop());
 
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
     }
 }
